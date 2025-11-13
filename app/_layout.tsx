@@ -5,9 +5,9 @@ import { ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
-import { TopBar } from '@/components/top-bar';
 import { View } from 'react-native';
 import { Stack } from 'expo-router';
+import BottomBar from '@/components/bottom-bar';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -18,11 +18,6 @@ export default function RootLayout() {
     <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <View className="flex-1 bg-background">
-        <TopBar
-          onMenuPress={() => console.log('Menu pressionado')}
-          onSearchPress={() => console.log('Busca pressionado')}
-          onCartPress={() => console.log('Carrinho pressionado')}
-        />
         <Stack
           screenOptions={{
             headerShown: false,
@@ -30,11 +25,14 @@ export default function RootLayout() {
           }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="sign-up" />
-          {/* <Stack.Screen name="login" /> */}
+          <Stack.Screen name="sign-in" />
+          <Stack.Screen name="create-listing" />
           <Stack.Screen name="book/[id]" />
+          <Stack.Screen name="profile" />
         </Stack>
         <PortalHost />
       </View>
+      <BottomBar />
     </ThemeProvider>
   );
 }

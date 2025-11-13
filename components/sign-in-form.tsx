@@ -9,7 +9,7 @@ import { router } from 'expo-router';
 import * as React from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 
-export function SignUpForm() {
+export function SignInForm() {
   const passwordInputRef = React.useRef<TextInput>(null);
 
   function onEmailSubmitEditing() {
@@ -17,16 +17,16 @@ export function SignUpForm() {
   }
 
   function onSubmit() {
-    // to-do
+    // TODO: Implementar...
   }
 
   return (
     <View className="gap-6">
       <Card className="border-border/0 shadow-none sm:border-border sm:shadow-sm sm:shadow-black/5">
         <CardHeader>
-          <CardTitle className="text-center text-xl sm:text-left">Crie sua conta</CardTitle>
+          <CardTitle className="text-center text-xl sm:text-left">Bem vindo de volta</CardTitle>
           <CardDescription className="text-center sm:text-left">
-            Bem vindo! Por favor, preencha os detalhes para começar.
+            Entre com suas credenciais para continuar.
           </CardDescription>
         </CardHeader>
         <CardContent className="gap-6">
@@ -45,8 +45,16 @@ export function SignUpForm() {
               />
             </View>
             <View className="gap-1.5">
-              <View className="flex-row items-center">
+              <View className="flex-row items-center justify-between">
                 <Label htmlFor="password">Senha</Label>
+                <Pressable
+                  onPress={() => {
+                    // TODO: Navigate to forgot password screen
+                  }}>
+                  <Text className="text-sm text-primary underline underline-offset-4">
+                    Esqueceu a senha?
+                  </Text>
+                </Pressable>
               </View>
               <Input
                 ref={passwordInputRef}
@@ -57,16 +65,16 @@ export function SignUpForm() {
               />
             </View>
             <Button className="w-full" onPress={onSubmit}>
-              <Text>Continuar</Text>
+              <Text>Entrar</Text>
             </Button>
           </View>
           <View className="flex-row items-center justify-center">
-            <Text className="text-center text-sm">Já possuí uma conta? </Text>
+            <Text className="text-center text-sm">Não tem uma conta? </Text>
             <Pressable
               onPress={() => {
-                router.push('/sign-in');
+                router.push('/sign-up');
               }}>
-              <Text className="text-sm underline underline-offset-4">Efetuar login</Text>
+              <Text className="text-sm underline underline-offset-4">Criar conta</Text>
             </Pressable>
           </View>
           <View className="flex-row items-center">
