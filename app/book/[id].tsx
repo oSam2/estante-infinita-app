@@ -9,6 +9,9 @@ import { ListingDetails } from '@/components/store/listing-details';
 import { useFetch } from '@/hooks/useFetch';
 import Loading from '../loading';
 import { Text } from '@/components/ui/text';
+import { createComentario } from '@/actions/comment';
+import { Alert } from 'react-native';
+import { mutate } from 'swr';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -18,7 +21,25 @@ export default function bookDetails() {
 
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
-  const handleAddComment = async (commentText: string) => {};
+  const handleAddComment = async (commentText: string) => {
+    setIsSubmittingComment(true);
+    try {
+      const res = await createComentario({ texto: commentText, anuncioId: id });
+      if (res.status === 201) {
+        // Revalidate comments list
+        await mutate(`/comentarios/listByAnuncio/${id}`);
+        return;
+      }
+
+      Alert.alert('Erro', res.data?.error || 'Não foi possível adicionar o comentário.');
+    } catch (err: any) {
+      console.error('Erro ao enviar comentário:', err);
+      const message = err?.data?.error || err.message || 'Erro ao enviar comentário';
+      Alert.alert('Erro', message);
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
 
   const {
     data: book,

@@ -7,17 +7,53 @@ import { Separator } from '@/components/ui/separator';
 import { Text } from '@/components/ui/text';
 import { router } from 'expo-router';
 import * as React from 'react';
-import { Pressable, TextInput, View } from 'react-native';
+import { Pressable, TextInput, View, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { register } from '@/actions/auth';
 
 export function SignUpForm() {
   const passwordInputRef = React.useRef<TextInput>(null);
+  const [nome, setNome] = React.useState('');
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
 
   function onEmailSubmitEditing() {
     passwordInputRef.current?.focus();
   }
 
-  function onSubmit() {
-    // to-do
+  async function handleSubmit() {
+    if (!nome.trim() || !email.trim() || !password) {
+      Alert.alert('Erro', 'Preencha nome, email e senha.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await register({ nome: nome.trim(), email: email.trim(), password });
+      if (res.status === 201) {
+        // salvar token e user
+        try {
+          if (res.data?.token) {
+            await AsyncStorage.setItem('@estante:token', res.data.token);
+          }
+          if (res.data?.userWithoutPassword) {
+            await AsyncStorage.setItem('@estante:user', JSON.stringify(res.data.userWithoutPassword));
+          }
+        } catch (e) {
+          console.warn('Não foi possível salvar dados no storage', e);
+        }
+
+        router.replace('/');
+        return;
+      }
+
+      Alert.alert('Erro', res.data?.error || res.data?.message || 'Não foi possível registrar.');
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível conectar ao servidor.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -40,8 +76,21 @@ export function SignUpForm() {
                 autoComplete="email"
                 autoCapitalize="none"
                 onSubmitEditing={onEmailSubmitEditing}
+                value={email}
+                onChangeText={setEmail}
                 returnKeyType="next"
                 submitBehavior="submit"
+              />
+            </View>
+            <View className="gap-1.5">
+              <Label htmlFor="nome">Nome</Label>
+              <Input
+                id="nome"
+                placeholder="Seu nome"
+                autoCapitalize="words"
+                returnKeyType="next"
+                value={nome}
+                onChangeText={setNome}
               />
             </View>
             <View className="gap-1.5">
@@ -53,11 +102,13 @@ export function SignUpForm() {
                 id="password"
                 secureTextEntry
                 returnKeyType="send"
-                onSubmitEditing={onSubmit}
+                onSubmitEditing={handleSubmit}
+                value={password}
+                onChangeText={setPassword}
               />
             </View>
-            <Button className="w-full" onPress={onSubmit}>
-              <Text>Continuar</Text>
+            <Button className="w-full" onPress={handleSubmit} disabled={loading}>
+              <Text>{loading ? 'Cadastrando...' : 'Continuar'}</Text>
             </Button>
           </View>
           <View className="flex-row items-center justify-center">

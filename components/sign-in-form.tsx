@@ -7,17 +7,52 @@ import { Separator } from '@/components/ui/separator';
 import { Text } from '@/components/ui/text';
 import { router } from 'expo-router';
 import * as React from 'react';
-import { Pressable, TextInput, View } from 'react-native';
+import { Pressable, TextInput, View, Alert } from 'react-native';
+import { signIn } from '@/actions/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export function SignInForm() {
   const passwordInputRef = React.useRef<TextInput>(null);
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
 
   function onEmailSubmitEditing() {
     passwordInputRef.current?.focus();
   }
 
-  function onSubmit() {
-    // TODO: Implementar...
+  async function handleSubmit() {
+    if (!email.trim() || !password) {
+      Alert.alert('Erro', 'Preencha email e senha.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await signIn({ email: email.trim(), password });
+      if (res.status === 200) {
+        console.log('Login sucesso:', res.data);
+        // Armazena token e usuário
+        try {
+          if (res.data?.token) {
+            await AsyncStorage.setItem('@estante:token', res.data.token);
+          }
+          if (res.data?.userWithoutPassword) {
+            await AsyncStorage.setItem('@estante:user', JSON.stringify(res.data.userWithoutPassword));
+          }
+        } catch (e) {
+          console.warn('Não foi possível salvar token no storage', e);
+        }
+
+        router.replace('/');
+        return;
+      }
+      Alert.alert('Erro', res.data?.error || res.data?.message || 'Credenciais inválidas');
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível conectar ao servidor.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -40,6 +75,8 @@ export function SignInForm() {
                 autoComplete="email"
                 autoCapitalize="none"
                 onSubmitEditing={onEmailSubmitEditing}
+                value={email}
+                onChangeText={setEmail}
                 returnKeyType="next"
                 submitBehavior="submit"
               />
@@ -61,11 +98,13 @@ export function SignInForm() {
                 id="password"
                 secureTextEntry
                 returnKeyType="send"
-                onSubmitEditing={onSubmit}
+                onSubmitEditing={handleSubmit}
+                value={password}
+                onChangeText={setPassword}
               />
             </View>
-            <Button className="w-full" onPress={onSubmit}>
-              <Text>Entrar</Text>
+            <Button className="w-full" onPress={handleSubmit} disabled={loading}>
+              <Text>{loading ? 'Entrando...' : 'Entrar'}</Text>
             </Button>
           </View>
           <View className="flex-row items-center justify-center">
