@@ -1,6 +1,6 @@
 import { token } from '@/mock/token';
 
-export const baseUrl = 'http://192.168.3.83:3333/api';
+export const baseUrl = 'http://localhost:3333/api';
 
 const api = async ({
   path,
