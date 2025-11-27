@@ -1,23 +1,20 @@
 import { View } from 'react-native';
 import { Button } from '@/components/ui/button';
-import { Text } from '@/components/ui/text';
 import { Textarea } from '@/components/ui/textarea';
 import { Send } from 'lucide-react-native';
 import { useState } from 'react';
 
 interface AddCommentProps {
   onSubmit: (comment: string) => void;
-  isSubmitting?: boolean;
+  isSubmitting: boolean;
 }
 
-export function AddComment({ onSubmit, isSubmitting = false }: AddCommentProps) {
+export function AddComment({ onSubmit, isSubmitting }: AddCommentProps) {
   const [comment, setComment] = useState('');
 
   const handleSubmit = () => {
-    if (comment.trim()) {
-      onSubmit(comment.trim());
-      setComment('');
-    }
+    onSubmit(comment.trim());
+    setComment('');
   };
 
   return (
@@ -34,8 +31,8 @@ export function AddComment({ onSubmit, isSubmitting = false }: AddCommentProps) 
         </View>
         <Button
           onPress={handleSubmit}
-          disabled={!comment.trim() || isSubmitting}
-          size="icon"
+          disabled={isSubmitting || !comment.trim()}
+          size="icon" 
           className="h-12 w-12">
           <Send size={20} className="text-primary-foreground" />
         </Button>

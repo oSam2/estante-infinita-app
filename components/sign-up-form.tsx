@@ -7,17 +7,42 @@ import { Separator } from '@/components/ui/separator';
 import { Text } from '@/components/ui/text';
 import { router } from 'expo-router';
 import * as React from 'react';
-import { Pressable, TextInput, View } from 'react-native';
+import { Pressable, TextInput, View, Alert } from 'react-native';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function SignUpForm() {
   const passwordInputRef = React.useRef<TextInput>(null);
+  const nomeInputRef = React.useRef<TextInput>(null);
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [nome, setNome] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const { signUp } = useAuth();
 
-  function onEmailSubmitEditing() {
+  function onNomeSubmitEditing() {
     passwordInputRef.current?.focus();
   }
 
-  function onSubmit() {
-    // to-do
+  function onEmailSubmitEditing() {
+    nomeInputRef.current?.focus();
+  }
+
+  async function onSubmit() {
+    if (!email || !password) {
+      Alert.alert('Erro', 'Preencha email e senha');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await signUp(email, password, nome);
+      Alert.alert('Sucesso', 'Conta criada com sucesso!');
+      router.replace('/(tabs)/home');
+    } catch (error) {
+      Alert.alert('Erro', error instanceof Error ? error.message : 'Erro ao criar conta');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -42,6 +67,21 @@ export function SignUpForm() {
                 onSubmitEditing={onEmailSubmitEditing}
                 returnKeyType="next"
                 submitBehavior="submit"
+                value={email}
+                onChangeText={setEmail}
+              />
+            </View>
+            <View className="gap-1.5">
+              <Label htmlFor="nome">Nome (opcional)</Label>
+              <Input
+                ref={nomeInputRef}
+                id="nome"
+                placeholder="Seu nome"
+                autoCapitalize="words"
+                onSubmitEditing={onNomeSubmitEditing}
+                returnKeyType="next"
+                value={nome}
+                onChangeText={setNome}
               />
             </View>
             <View className="gap-1.5">
@@ -54,27 +94,23 @@ export function SignUpForm() {
                 secureTextEntry
                 returnKeyType="send"
                 onSubmitEditing={onSubmit}
+                value={password}
+                onChangeText={setPassword}
               />
             </View>
-            <Button className="w-full" onPress={onSubmit}>
-              <Text>Continuar</Text>
+            <Button className="w-full" onPress={onSubmit} disabled={loading}>
+              <Text>{loading ? 'Criando conta...' : 'Continuar'}</Text>
             </Button>
           </View>
           <View className="flex-row items-center justify-center">
             <Text className="text-center text-sm">Já possuí uma conta? </Text>
             <Pressable
               onPress={() => {
-                router.push('/sign-in');
+                router.push('/(auth)/sign-in');
               }}>
               <Text className="text-sm underline underline-offset-4">Efetuar login</Text>
             </Pressable>
           </View>
-          <View className="flex-row items-center">
-            <Separator className="flex-1" />
-            <Text className="px-4 text-sm text-muted-foreground">ou</Text>
-            <Separator className="flex-1" />
-          </View>
-          <SocialConnections />
         </CardContent>
       </Card>
     </View>

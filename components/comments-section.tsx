@@ -3,22 +3,26 @@ import { Text } from '@/components/ui/text';
 import { CommentItem } from './comment-item';
 import { AddComment } from './add-comment';
 import { MessageCircle } from 'lucide-react-native';
-import type { Comment } from '@/types/interfaces';
-import { useFetch } from '@/hooks/useFetch';
 import Loading from '@/app/loading';
+import { useComments } from '@/hooks/useComments';
+import { useState } from 'react';
 
 interface CommentsSectionProps {
   listingId: number;
-  onAddComment: (comment: string) => void;
-  isSubmitting?: boolean;
+  ownerId?: number;
 }
 
-export function CommentsSection({ listingId, onAddComment, isSubmitting }: CommentsSectionProps) {
+export function CommentsSection({ listingId, ownerId }: CommentsSectionProps) {
   const {
-    data: comments,
+    comments,
     isLoading: commentsLoading,
-    isError: commentsError,
-  } = useFetch<Comment[]>(`/comentarios/listByAnuncio/${listingId}`);
+    error: commentsError,
+    createComment,
+    updateComment,
+    deleteComment,
+  } = useComments(listingId);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (commentsLoading) {
     return <Loading />;
@@ -32,15 +36,36 @@ export function CommentsSection({ listingId, onAddComment, isSubmitting }: Comme
     );
   }
 
+  const handleAddComment = async (content: string) => {
+    if (!content.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      await createComment(listingId, content);
+    } catch (error) {
+      console.error('Erro ao adicionar comentário:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateComment = async (commentId: number, content: string) => {
+    await updateComment(commentId, content);
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    await deleteComment(commentId);
+  };
+
   return (
     <View className="border-t border-border bg-background">
       <View className="flex-row items-center gap-2 p-4">
         <MessageCircle size={20} className="text-muted-foreground" />
         <Text className="text-lg font-semibold">Comentários ({comments.length})</Text>
       </View>
-      {/* Formulário para adicionar comentário */}
-      <AddComment onSubmit={onAddComment} isSubmitting={isSubmitting} />
-      {/* Lista de comentários */}
+
+      <AddComment onSubmit={handleAddComment} isSubmitting={isSubmitting} />
+
       <View className="px-4">
         {comments.length === 0 ? (
           <View className="items-center py-8">
@@ -50,7 +75,15 @@ export function CommentsSection({ listingId, onAddComment, isSubmitting }: Comme
             </Text>
           </View>
         ) : (
-          comments.map((comment) => <CommentItem key={comment.id} comment={comment} />)
+          comments.map((comment) => (
+            <CommentItem
+              key={comment.id}
+              comment={comment}
+              ownerId={ownerId}
+              onUpdate={handleUpdateComment}
+              onDelete={handleDeleteComment}
+            />
+          ))
         )}
       </View>
     </View>

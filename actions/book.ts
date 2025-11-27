@@ -1,65 +1,5 @@
-import { token } from '@/mock/token';
 import { api } from '@/services/api';
 
-export async function createBookListing(formData: FormData) {
-  try {
-    const res = await api({
-      path: '/anuncios/createAnuncio',
-      data: formData,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    return res;
-  } catch (error) {
-    console.error('Erro ao criar anúncio:', error);
-    return { success: false };
-  }
-}
-
-export async function fetchBookListings() {
-  try {
-    const res = await api({
-      path: '/anuncios/getAllAnuncios',
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    if (res.status === 200) {
-      return res.data;
-    }
-
-    return [];
-  } catch (error) {
-    console.error('Erro ao buscar anúncios:', error);
-    return [];
-  }
-}
-
-export async function fetchBookDetails(bookId: number) {
-  try {
-    const res = await api({
-      path: `/anuncios/getAnuncioById/${bookId}`,
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (res.status === 200) {
-      return res.data;
-    }
-
-    return null;
-  } catch (error) {
-    console.error('Erro ao buscar detalhes do livro:', error);
-    return null;
-  }
-}
 
 export async function searchBookListings(searchParams: {
   query?: string;
@@ -85,23 +25,12 @@ export async function searchBookListings(searchParams: {
     }
 
     const queryString = params.toString();
-    const path = queryString ? `/anuncios/search?${queryString}` : '/anuncios/getAllAnuncios';
+    const endpoint = queryString ? `/anuncios/search?${queryString}` : '/anuncios/getAllAnuncios';
 
-    const res = await api({
-      path,
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (res.status === 200) {
-      return res.data;
-    }
-
-    return [];
+    const response = await api.get(endpoint);
+    return response.data;
   } catch (error) {
     console.error('Erro ao buscar anúncios:', error);
-    return [];
+    throw error;
   }
 }

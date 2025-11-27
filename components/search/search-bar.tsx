@@ -4,6 +4,7 @@ import { Text } from '@/components/ui/text';
 import { Search, X, Filter } from 'lucide-react-native';
 import { Badge } from '@/components/ui/badge';
 import type { BookListing } from '@/types/interfaces';
+import { Icon } from '../ui/icon';
 
 interface SearchBarProps {
   searchQuery: string;
@@ -32,19 +33,18 @@ export function SearchBar({
 }: SearchBarProps) {
   const [showFilters, setShowFilters] = useState(false);
 
-  // Extrair gêneros únicos dos livros
   const availableGenres = React.useMemo(() => {
     const genres = new Set(allBooks.map((book) => book.genero).filter(Boolean));
     return Array.from(genres).sort();
   }, [allBooks]);
 
-  // Extrair condições únicas
+
   const availableConditions = React.useMemo(() => {
     const conditions = new Set(allBooks.map((book) => book.condicao).filter(Boolean));
     return Array.from(conditions).sort();
   }, [allBooks]);
 
-  // Extrair tipos únicos
+
   const availableTypes = React.useMemo(() => {
     const types = new Set(allBooks.map((book) => book.tipo).filter(Boolean));
     return Array.from(types).sort();
@@ -57,7 +57,7 @@ export function SearchBar({
       {/* Barra de busca */}
       <View className="px-4 py-3">
         <View className="flex-row items-center rounded-lg border border-border bg-muted/50 px-3 py-2">
-          <Search size={20} className="text-muted-foreground" />
+          <Icon as={Search} size={20} className="text-muted-foreground" />
           <TextInput
             className="ml-2 flex-1 text-base text-foreground"
             placeholder="Buscar por título, autor, gênero..."
@@ -79,7 +79,7 @@ export function SearchBar({
           <TouchableOpacity
             onPress={() => setShowFilters(!showFilters)}
             className="flex-row items-center rounded-md bg-muted px-3 py-2">
-            <Filter size={16} className="text-foreground" />
+            <Icon as={Filter} size={20} className="text-foreground" />
             <Text className="ml-2 text-sm font-medium">Filtros</Text>
             {hasActiveFilters && <View className="ml-2 h-2 w-2 rounded-full bg-primary" />}
           </TouchableOpacity>

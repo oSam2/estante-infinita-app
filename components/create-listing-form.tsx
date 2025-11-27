@@ -1,15 +1,15 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Text } from '@/components/ui/text';
 import { Textarea } from '@/components/ui/textarea';
 import { router } from 'expo-router';
 import * as React from 'react';
-import { Alert, Dimensions, Image, Pressable, ScrollView, TextInput, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, X } from 'lucide-react-native';
-import { createBookListing } from '@/actions/book';
+// import { createBookListing } from '@/actions/book';
 import { CONDICAO_LIVRO, GENERO, TIPO_ANUNCIO } from '@/types/enum';
 import {
   AD_TYPE_LABELS,
@@ -19,48 +19,40 @@ import {
   getConditionString,
   getGenreString,
 } from '@/utils/book';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { createListingSchema, type CreateListingFormData } from '@/lib/validations/listing';
+import { useBooks } from '@/hooks/useBooks';
 
 export function CreateListingForm() {
-  const [title, setTitle] = React.useState('');
-  const [author, setAuthor] = React.useState('');
-  const [publisher, setPublisher] = React.useState('');
-  const [isbn, setIsbn] = React.useState('');
-  const [price, setPrice] = React.useState('');
-  const [genre, setGenre] = React.useState<GENERO | null>(null);
-  const [condition, setCondition] = React.useState<CONDICAO_LIVRO | null>(null);
-  const [listingType, setListingType] = React.useState<TIPO_ANUNCIO | null>(null);
-  const [description, setDescription] = React.useState('');
-  const [imageUri, setImageUri] = React.useState<string | null>(null);
   const [showGenreMenu, setShowGenreMenu] = React.useState(false);
   const [showConditionMenu, setShowConditionMenu] = React.useState(false);
   const [showListingTypeMenu, setShowListingTypeMenu] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const authorInputRef = React.useRef<TextInput>(null);
-  const publisherInputRef = React.useRef<TextInput>(null);
-  const isbnInputRef = React.useRef<TextInput>(null);
-  const priceInputRef = React.useRef<TextInput>(null);
-  const descriptionInputRef = React.useRef<TextInput>(null);
+  const {
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<CreateListingFormData>({
+    resolver: zodResolver(createListingSchema),
+    defaultValues: {
+      titulo: '',
+      autor: '',
+      editora: '',
+      isbn: '',
+      preco: '',
+      descricao: '',
+      imageUri: null,
+    },
+  });
 
-  function onTitleSubmitEditing() {
-    authorInputRef.current?.focus();
-  }
+  const { createBook } = useBooks();
 
-  function onAuthorSubmitEditing() {
-    publisherInputRef.current?.focus();
-  }
-
-  function onPublisherSubmitEditing() {
-    isbnInputRef.current?.focus();
-  }
-
-  function onIsbnSubmitEditing() {
-    priceInputRef.current?.focus();
-  }
-
-  function onPriceSubmitEditing() {
-    descriptionInputRef.current?.focus();
-  }
+  const listingType = watch('tipo');
+  const imageUri = watch('imageUri');
 
   async function pickImage() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -78,69 +70,48 @@ export function CreateListingForm() {
     });
 
     if (!result.canceled && result.assets[0]) {
-      setImageUri(result.assets[0].uri);
+      setValue('imageUri', result.assets[0].uri);
     }
   }
 
   function removeImage() {
-    setImageUri(null);
+    setValue('imageUri', null);
   }
 
-  async function onSubmit() {
-    if (
-      !title ||
-      !author ||
-      genre === null ||
-      condition === null ||
-      listingType === null ||
-      !description
-    ) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos obrigatórios.');
-      return;
-    }
-
-    if (listingType === TIPO_ANUNCIO.VENDA && !price) {
-      Alert.alert('Erro', 'Por favor, informe o preço para venda.');
-      return;
-    }
-
+  async function onSubmit(data: CreateListingFormData) {
     setIsSubmitting(true);
 
     try {
       const formData = new FormData();
-      formData.append('titulo', title);
-      formData.append('autor', author);
-      formData.append('editora', publisher || '');
-      formData.append('isbn', isbn || '');
-      formData.append('preco', price || '0');
-      formData.append('genero', getGenreString(genre));
-      formData.append('condicao', getConditionString(condition));
-      formData.append('tipo', getAdTypeString(listingType));
-      formData.append('descricao', description);
+      formData.append('titulo', data.titulo);
+      formData.append('autor', data.autor);
+      formData.append('editora', data.editora || '');
+      formData.append('isbn', data.isbn || '');
+      formData.append('preco', data.preco || '0');
+      formData.append('genero', getGenreString(data.genero));
+      formData.append('condicao', getConditionString(data.condicao));
+      formData.append('tipo', getAdTypeString(data.tipo));
+      formData.append('descricao', data.descricao);
 
-      if (imageUri) {
-        const filename = imageUri.split('/').pop() || 'book-image.jpg';
+      if (data.imageUri) {
+        const filename = data.imageUri.split('/').pop() || 'book-image.jpg';
         const fileType = filename.split('.').pop() || 'jpg';
 
         formData.append('file', {
-          uri: imageUri,
+          uri: data.imageUri,
           name: filename,
           type: `image/${fileType}`,
         } as any);
       }
 
-      const response = await createBookListing(formData);
-
-      if (response) {
-        Alert.alert('Sucesso', 'Anúncio criado com sucesso!', [
-          {
-            text: 'OK',
-            onPress: () => router.back(),
-          },
-        ]);
-      } else {
-        Alert.alert('Erro', 'Não foi possível criar o anúncio. Tente novamente.');
-      }
+      await createBook(formData);
+  
+      Alert.alert('Sucesso', 'Anúncio criado com sucesso!', [
+        {
+          text: 'OK',
+          onPress: () => router.back(),
+        },
+      ]);
     } catch (error) {
       console.error('Erro ao criar anúncio:', error);
       Alert.alert('Erro', 'Ocorreu um erro ao criar o anúncio. Tente novamente.');
@@ -164,114 +135,165 @@ export function CreateListingForm() {
               <Label>
                 Tipo de Anúncio <Text className="text-destructive">*</Text>
               </Label>
-              <Pressable
-                onPress={() => setShowListingTypeMenu(!showListingTypeMenu)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2">
-                <Text
-                  className={listingType !== null ? 'text-foreground' : 'text-muted-foreground'}>
-                  {listingType !== null
-                    ? AD_TYPE_LABELS[listingType]
-                    : 'Selecione o tipo de anúncio'}
-                </Text>
-              </Pressable>
-              {showListingTypeMenu && (
-                <View className="rounded-md border border-input bg-background">
-                  {Object.entries(AD_TYPE_LABELS).map(([key, label]) => (
+              <Controller
+                control={control}
+                name="tipo"
+                render={({ field: { value } }) => (
+                  <>
                     <Pressable
-                      key={key}
-                      onPress={() => {
-                        setListingType(parseInt(key) as TIPO_ANUNCIO);
-                        setShowListingTypeMenu(false);
-                      }}
-                      className="border-b border-border px-3 py-3 last:border-b-0">
+                      onPress={() => setShowListingTypeMenu(!showListingTypeMenu)}
+                      className={`flex h-10 w-full rounded-md border px-3 py-2 ${
+                        errors.tipo ? 'border-destructive' : 'border-input'
+                      } bg-background`}>
                       <Text
                         className={
-                          listingType === parseInt(key)
-                            ? 'font-medium text-primary'
-                            : 'text-foreground'
+                          value !== undefined ? 'text-foreground' : 'text-muted-foreground'
                         }>
-                        {label}
+                        {value !== undefined
+                          ? AD_TYPE_LABELS[value]
+                          : 'Selecione o tipo de anúncio'}
                       </Text>
                     </Pressable>
-                  ))}
-                </View>
+                    {showListingTypeMenu && (
+                      <View className="rounded-md border border-input bg-background">
+                        {Object.entries(AD_TYPE_LABELS).map(([key, label]) => (
+                          <Pressable
+                            key={key}
+                            onPress={() => {
+                              setValue('tipo', parseInt(key) as TIPO_ANUNCIO);
+                              setShowListingTypeMenu(false);
+                            }}
+                            className="border-b border-border px-3 py-3 last:border-b-0">
+                            <Text
+                              className={
+                                value === parseInt(key)
+                                  ? 'font-medium text-primary'
+                                  : 'text-foreground'
+                              }>
+                              {label}
+                            </Text>
+                          </Pressable>
+                        ))}
+                      </View>
+                    )}
+                  </>
+                )}
+              />
+              {errors.tipo && (
+                <Text className="text-sm text-destructive">{errors.tipo.message}</Text>
               )}
             </View>
 
             {/* Título */}
             <View className="gap-1.5">
-              <Label htmlFor="title">
+              <Label htmlFor="titulo">
                 Título <Text className="text-destructive">*</Text>
               </Label>
-              <Input
-                id="title"
-                placeholder="Ex: Harry Potter e a Pedra Filosofal"
-                value={title}
-                onChangeText={setTitle}
-                onSubmitEditing={onTitleSubmitEditing}
-                returnKeyType="next"
-                submitBehavior="submit"
+              <Controller
+                control={control}
+                name="titulo"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    id="titulo"
+                    placeholder="Ex: Harry Potter e a Pedra Filosofal"
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    returnKeyType="next"
+                    className={errors.titulo ? 'border-destructive' : ''}
+                  />
+                )}
               />
+              {errors.titulo && (
+                <Text className="text-sm text-destructive">{errors.titulo.message}</Text>
+              )}
             </View>
+
             {/* Descrição */}
             <View className="gap-1.5">
-              <Label htmlFor="description">
+              <Label htmlFor="descricao">
                 Descrição <Text className="text-destructive">*</Text>
               </Label>
-              <Textarea
-                ref={descriptionInputRef}
-                id="description"
-                placeholder="Descreva o estado do livro, se há marcações, páginas danificadas, etc."
-                value={description}
-                onChangeText={setDescription}
-                numberOfLines={6}
+              <Controller
+                control={control}
+                name="descricao"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Textarea
+                    id="descricao"
+                    placeholder="Descreva o estado do livro, se há marcações, páginas danificadas, etc."
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    numberOfLines={6}
+                    className={errors.descricao ? 'border-destructive' : ''}
+                  />
+                )}
               />
+              {errors.descricao && (
+                <Text className="text-sm text-destructive">{errors.descricao.message}</Text>
+              )}
             </View>
 
             {/* Autor */}
             <View className="gap-1.5">
-              <Label htmlFor="author">
+              <Label htmlFor="autor">
                 Autor <Text className="text-destructive">*</Text>
               </Label>
-              <Input
-                ref={authorInputRef}
-                id="author"
-                placeholder="Ex: J.K. Rowling"
-                value={author}
-                onChangeText={setAuthor}
-                onSubmitEditing={onAuthorSubmitEditing}
-                returnKeyType="next"
-                submitBehavior="submit"
+              <Controller
+                control={control}
+                name="autor"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    id="autor"
+                    placeholder="Ex: J.K. Rowling"
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    returnKeyType="next"
+                    className={errors.autor ? 'border-destructive' : ''}
+                  />
+                )}
               />
+              {errors.autor && (
+                <Text className="text-sm text-destructive">{errors.autor.message}</Text>
+              )}
             </View>
 
             {/* Editora */}
             <View className="gap-1.5">
-              <Label htmlFor="publisher">Editora (opcional)</Label>
-              <Input
-                ref={publisherInputRef}
-                id="publisher"
-                placeholder="Ex: Editora Rocco"
-                value={publisher}
-                onChangeText={setPublisher}
-                onSubmitEditing={onPublisherSubmitEditing}
-                returnKeyType="next"
-                submitBehavior="submit"
+              <Label htmlFor="editora">Editora (opcional)</Label>
+              <Controller
+                control={control}
+                name="editora"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    id="editora"
+                    placeholder="Ex: Editora Rocco"
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    returnKeyType="next"
+                  />
+                )}
               />
             </View>
 
             {/* ISBN */}
             <View className="gap-1.5">
               <Label htmlFor="isbn">ISBN (opcional)</Label>
-              <Input
-                ref={isbnInputRef}
-                id="isbn"
-                placeholder="Ex: 978-8532530787"
-                value={isbn}
-                onChangeText={setIsbn}
-                onSubmitEditing={onIsbnSubmitEditing}
-                returnKeyType="next"
-                submitBehavior="submit"
+              <Controller
+                control={control}
+                name="isbn"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    id="isbn"
+                    placeholder="Ex: 978-8532530787"
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    returnKeyType="next"
+                  />
+                )}
               />
             </View>
 
@@ -280,32 +302,50 @@ export function CreateListingForm() {
               <Label>
                 Gênero <Text className="text-destructive">*</Text>
               </Label>
-              <Pressable
-                onPress={() => setShowGenreMenu(!showGenreMenu)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2">
-                <Text className={genre !== null ? 'text-foreground' : 'text-muted-foreground'}>
-                  {genre !== null ? GENRE_LABELS[genre] : 'Selecione o gênero'}
-                </Text>
-              </Pressable>
-              {showGenreMenu && (
-                <ScrollView className="max-h-48 rounded-md border border-input bg-background">
-                  {Object.entries(GENRE_LABELS).map(([key, label]) => (
+              <Controller
+                control={control}
+                name="genero"
+                render={({ field: { value } }) => (
+                  <>
                     <Pressable
-                      key={key}
-                      onPress={() => {
-                        setGenre(parseInt(key) as GENERO);
-                        setShowGenreMenu(false);
-                      }}
-                      className="border-b border-border px-3 py-3">
+                      onPress={() => setShowGenreMenu(!showGenreMenu)}
+                      className={`flex h-10 w-full rounded-md border px-3 py-2 ${
+                        errors.genero ? 'border-destructive' : 'border-input'
+                      } bg-background`}>
                       <Text
                         className={
-                          genre === parseInt(key) ? 'font-medium text-primary' : 'text-foreground'
+                          value !== undefined ? 'text-foreground' : 'text-muted-foreground'
                         }>
-                        {label}
+                        {value !== undefined ? GENRE_LABELS[value] : 'Selecione o gênero'}
                       </Text>
                     </Pressable>
-                  ))}
-                </ScrollView>
+                    {showGenreMenu && (
+                      <ScrollView className="max-h-48 rounded-md border border-input bg-background">
+                        {Object.entries(GENRE_LABELS).map(([key, label]) => (
+                          <Pressable
+                            key={key}
+                            onPress={() => {
+                              setValue('genero', parseInt(key) as GENERO);
+                              setShowGenreMenu(false);
+                            }}
+                            className="border-b border-border px-3 py-3">
+                            <Text
+                              className={
+                                value === parseInt(key)
+                                  ? 'font-medium text-primary'
+                                  : 'text-foreground'
+                              }>
+                              {label}
+                            </Text>
+                          </Pressable>
+                        ))}
+                      </ScrollView>
+                    )}
+                  </>
+                )}
+              />
+              {errors.genero && (
+                <Text className="text-sm text-destructive">{errors.genero.message}</Text>
               )}
             </View>
 
@@ -314,54 +354,77 @@ export function CreateListingForm() {
               <Label>
                 Condição do Livro <Text className="text-destructive">*</Text>
               </Label>
-              <Pressable
-                onPress={() => setShowConditionMenu(!showConditionMenu)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2">
-                <Text className={condition !== null ? 'text-foreground' : 'text-muted-foreground'}>
-                  {condition !== null ? CONDITION_LABELS[condition] : 'Selecione a condição'}
-                </Text>
-              </Pressable>
-              {showConditionMenu && (
-                <View className="rounded-md border border-input bg-background">
-                  {Object.entries(CONDITION_LABELS).map(([key, label]) => (
+              <Controller
+                control={control}
+                name="condicao"
+                render={({ field: { value } }) => (
+                  <>
                     <Pressable
-                      key={key}
-                      onPress={() => {
-                        setCondition(parseInt(key) as CONDICAO_LIVRO);
-                        setShowConditionMenu(false);
-                      }}
-                      className="border-b border-border px-3 py-3 last:border-b-0">
+                      onPress={() => setShowConditionMenu(!showConditionMenu)}
+                      className={`flex h-10 w-full rounded-md border px-3 py-2 ${
+                        errors.condicao ? 'border-destructive' : 'border-input'
+                      } bg-background`}>
                       <Text
                         className={
-                          condition === parseInt(key)
-                            ? 'font-medium text-primary'
-                            : 'text-foreground'
+                          value !== undefined ? 'text-foreground' : 'text-muted-foreground'
                         }>
-                        {label}
+                        {value !== undefined ? CONDITION_LABELS[value] : 'Selecione a condição'}
                       </Text>
                     </Pressable>
-                  ))}
-                </View>
+                    {showConditionMenu && (
+                      <View className="rounded-md border border-input bg-background">
+                        {Object.entries(CONDITION_LABELS).map(([key, label]) => (
+                          <Pressable
+                            key={key}
+                            onPress={() => {
+                              setValue('condicao', parseInt(key) as CONDICAO_LIVRO);
+                              setShowConditionMenu(false);
+                            }}
+                            className="border-b border-border px-3 py-3 last:border-b-0">
+                            <Text
+                              className={
+                                value === parseInt(key)
+                                  ? 'font-medium text-primary'
+                                  : 'text-foreground'
+                              }>
+                              {label}
+                            </Text>
+                          </Pressable>
+                        ))}
+                      </View>
+                    )}
+                  </>
+                )}
+              />
+              {errors.condicao && (
+                <Text className="text-sm text-destructive">{errors.condicao.message}</Text>
               )}
             </View>
 
             {/* Preço - Condicional para Venda */}
             {listingType === TIPO_ANUNCIO.VENDA && (
               <View className="gap-1.5">
-                <Label htmlFor="price">
+                <Label htmlFor="preco">
                   Preço (R$) <Text className="text-destructive">*</Text>
                 </Label>
-                <Input
-                  ref={priceInputRef}
-                  id="price"
-                  placeholder="Ex: 25.00"
-                  keyboardType="decimal-pad"
-                  value={price}
-                  onChangeText={setPrice}
-                  onSubmitEditing={onPriceSubmitEditing}
-                  returnKeyType="next"
-                  submitBehavior="submit"
+                <Controller
+                  control={control}
+                  name="preco"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      id="preco"
+                      placeholder="Ex: 25.00"
+                      keyboardType="decimal-pad"
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      className={errors.preco ? 'border-destructive' : ''}
+                    />
+                  )}
                 />
+                {errors.preco && (
+                  <Text className="text-sm text-destructive">{errors.preco.message}</Text>
+                )}
               </View>
             )}
 
@@ -400,7 +463,7 @@ export function CreateListingForm() {
                 disabled={isSubmitting}>
                 <Text>Cancelar</Text>
               </Button>
-              <Button className="flex-1" onPress={onSubmit} disabled={isSubmitting}>
+              <Button className="flex-1" onPress={handleSubmit(onSubmit)} disabled={isSubmitting}>
                 <Text>{isSubmitting ? 'Publicando...' : 'Publicar Anúncio'}</Text>
               </Button>
             </View>

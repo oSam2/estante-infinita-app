@@ -23,7 +23,7 @@ export interface User {
 
 export interface BookListingDetails extends BookListing {
   usuario: User;
-  usuarioId: string;
+  usuarioId: number;
 }
 
 export interface Comment {
@@ -31,7 +31,7 @@ export interface Comment {
   texto: string;
   usuario: User;
   anuncioId: string;
-  usuarioId: string;
+  usuarioId: number;
   criadoEm: string;
   atualizadoEm?: string;
 }

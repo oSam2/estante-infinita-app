@@ -2,11 +2,10 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { router } from 'expo-router';
-import { ArrowLeft, Menu, MoonStarIcon, ShoppingCart, SunIcon } from 'lucide-react-native';
+import { ArrowLeft, MoonStarIcon, ShoppingCart, SunIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { View, StatusBar, Platform } from 'react-native';
-import { Input } from './ui/input';
 
 interface TopBarProps {
   title?: string;
@@ -22,7 +21,7 @@ interface TopBarProps {
 export function TopBar({
   title,
   showBackButton = false,
-  showMenuButton = true,
+  // showMenuButton = true,
   showCartButton = false,
   showThemeToggle = false,
   onMenuPress,
@@ -53,15 +52,15 @@ export function TopBar({
                 <Icon as={ArrowLeft} className="size-5 text-foreground" />
               </Button>
             )}
-            {showMenuButton && !showBackButton && (
+            {/* {showMenuButton && !showBackButton && (
               <Button onPress={onMenuPress} size="icon" variant="ghost" className="mr-2">
                 <Icon as={Menu} className="size-5 text-foreground" />
               </Button>
-            )}
+            )} */}
           </View>
 
           {title && (
-            <View className="absolute inset-x-0 flex-1 items-center">
+            <View className="flex-1 items-center px-14">
               <Text className="text-lg font-semibold text-foreground" numberOfLines={1}>
                 {title}
               </Text>

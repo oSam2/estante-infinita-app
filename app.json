@@ -25,7 +25,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.estanteinfinitaapp"
+      "package": "com.osam2.estanteinfinitaapp"
     },
     "web": {
       "bundler": "metro",
@@ -37,6 +37,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "22a9591d-7752-4eb5-b3a2-128f6429a573"
+      }
     }
   }
 }

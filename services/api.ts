@@ -1,41 +1,23 @@
-import { token } from '@/mock/token';
+import axios from 'axios';
+import { getStoredToken } from '../actions/auth';
+import { BASE_API_URL } from '@/lib/constants';
 
-export const baseUrl = 'http://192.168.3.83:3333/api';
 
-const api = async ({
-  path,
-  data,
-  ...options
-}: {
-  path: string;
-  data?: any;
-  method?: string;
-  headers?: HeadersInit;
-}) => {
-  try {
-    const response = await fetch(`${baseUrl}${path}`, {
-      method: options.method || 'GET',
-      body: data,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      ...options,
-    });
+const apiClient = axios.create({
+  baseURL: BASE_API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-    if (!response.ok) {
-      throw new Error('Ocorreu um erro na requisição');
-    }
-
-    const resData = await response.json();
-
-    return {
-      status: response.status,
-      data: resData,
-    };
-  } catch (error) {
-    console.error('Erro ao criar anúncio:', error);
-    throw error;
+apiClient.interceptors.request.use(async (config) => {
+  const token = await getStoredToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-};
+  return config;
+});
 
-export { api };
+export const api = apiClient;
+
+export const fetcher = (url: string) => api.get(url).then((res) => res.data);

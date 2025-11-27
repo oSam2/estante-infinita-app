@@ -1,4 +1,4 @@
-import type { BookListing } from '@/types/interfaces';
+import type { BookListing as BookListingType } from '@/types/interfaces';
 import { View } from 'react-native';
 import { BookCard } from './book-card';
 
@@ -6,7 +6,7 @@ export function BookListing({
   books,
   itemWidth,
 }: {
-  books: BookListing[] | undefined;
+  books: BookListingType[] | undefined;
   itemWidth: number;
 }) {
   if (!books) return null;
