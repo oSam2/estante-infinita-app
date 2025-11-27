@@ -65,6 +65,8 @@ export function SignUpForm() {
                 autoComplete="email"
                 autoCapitalize="none"
                 onSubmitEditing={onEmailSubmitEditing}
+                value={email}
+                onChangeText={setEmail}
                 returnKeyType="next"
                 submitBehavior="submit"
                 value={email}
