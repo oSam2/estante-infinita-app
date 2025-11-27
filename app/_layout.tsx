@@ -6,33 +6,49 @@ import { PortalHost } from '@rn-primitives/portal';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'nativewind';
 import { View } from 'react-native';
-import { Stack } from 'expo-router';
-import BottomBar from '@/components/bottom-bar';
+import { Slot, useRouter, useSegments } from 'expo-router';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { useEffect } from 'react';
+import Loading from './loading';
 
-export { ErrorBoundary } from 'expo-router';
+function RootLayoutNav() {
+  const { isAuthenticated, loading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (loading) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+
+    if (!isAuthenticated && !inAuthGroup) {
+      router.replace('/(auth)/sign-in');
+    } else if (isAuthenticated && inAuthGroup) {
+      router.replace('/(tabs)/home');
+    }
+  }, [isAuthenticated, loading, segments]);
+
+  if (loading) {
+    return <Loading />;
+  }
+
+  return <Slot />;
+}
 
 export default function RootLayout() {
   const { colorScheme } = useColorScheme();
 
   return (
-    <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      <View className="flex-1 bg-background">
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            animation: 'slide_from_right',
-          }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="sign-up" />
-          <Stack.Screen name="sign-in" />
-          <Stack.Screen name="create-listing" />
-          <Stack.Screen name="book/[id]" />
-          <Stack.Screen name="profile" />
-        </Stack>
-        <PortalHost />
-      </View>
-      <BottomBar />
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+        <View className="flex-1 bg-background">
+          <RootLayoutNav />
+          <PortalHost />
+        </View>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
+
+export { ErrorBoundary } from 'expo-router';

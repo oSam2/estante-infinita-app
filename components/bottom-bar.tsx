@@ -3,6 +3,7 @@ import { View, TouchableOpacity } from 'react-native';
 import { Text } from './ui/text';
 import { Home, Search, User, PlusCircle } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { Icon } from './ui/icon';
 
 interface BottomBarProps {
   onHomePress?: () => void;
@@ -12,14 +13,14 @@ interface BottomBarProps {
 
 const BottomBar: React.FC<BottomBarProps> = ({ onHomePress, onSearchPress, onProfilePress }) => {
   const handleCreateListing = () => {
-    router.push('/create-listing');
+    router.push('/(tabs)/create-listing');
   };
 
   const handleProfilePress = () => {
     if (onProfilePress) {
       onProfilePress();
     } else {
-      router.push('/profile');
+      router.push('/(tabs)/profile');
     }
   };
 
@@ -27,28 +28,36 @@ const BottomBar: React.FC<BottomBarProps> = ({ onHomePress, onSearchPress, onPro
     if (onSearchPress) {
       onSearchPress();
     } else {
-      router.push('/search');
+      router.push('/(tabs)/search');
+    }
+  };
+
+  const handleHomePress = () => {
+    if (onHomePress) {
+      onHomePress();
+    } else {
+      router.push('/(tabs)/home');
     }
   };
 
   return (
     <View className="flex-row items-center justify-around border-t border-border bg-background py-3">
-      <TouchableOpacity className="flex-1 items-center justify-center" onPress={onHomePress}>
-        <Home size={24} className="text-foreground" />
+      <TouchableOpacity className="flex-1 items-center justify-center" onPress={handleHomePress}>
+        <Icon as={Home} size={24} className="text-foreground" />
         <Text className="mt-1 text-xs text-foreground">Home</Text>
       </TouchableOpacity>
       <TouchableOpacity className="flex-1 items-center justify-center" onPress={handleSearchPress}>
-        <Search size={24} className="text-foreground" />
+        <Icon as={Search} size={24} className="text-foreground" />
         <Text className="mt-1 text-xs text-foreground">Buscar</Text>
       </TouchableOpacity>
       <TouchableOpacity
         className="flex-1 items-center justify-center"
         onPress={handleCreateListing}>
-        <PlusCircle size={24} className="text-primary" />
+        <Icon as={PlusCircle} size={24} className="text-primary" />
         <Text className="mt-1 text-xs text-primary">Anunciar</Text>
       </TouchableOpacity>
       <TouchableOpacity className="flex-1 items-center justify-center" onPress={handleProfilePress}>
-        <User size={24} className="text-foreground" />
+        <Icon as={User} size={24} className="text-foreground" />
         <Text className="mt-1 text-xs text-foreground">Perfil</Text>
       </TouchableOpacity>
     </View>

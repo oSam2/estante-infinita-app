@@ -3,15 +3,6 @@ import { View } from 'react-native';
 import { Text } from '../ui/text';
 import type { User as UserType } from '@/types/interfaces';
 
-interface UserWithStats extends UserType {
-  estatisticas?: {
-    anunciosAtivos: number;
-    anunciosVendidos: number;
-    avaliacaoMedia: number;
-    totalAvaliacoes: number;
-  };
-}
-
 export function UserInfo({ user }: { user: UserType | undefined }) {
   if (!user) return null;
 

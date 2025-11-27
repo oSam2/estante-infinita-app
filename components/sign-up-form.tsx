@@ -8,49 +8,38 @@ import { Text } from '@/components/ui/text';
 import { router } from 'expo-router';
 import * as React from 'react';
 import { Pressable, TextInput, View, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { register } from '@/actions/auth';
+import { useAuth } from '@/contexts/AuthContext';
 
 export function SignUpForm() {
   const passwordInputRef = React.useRef<TextInput>(null);
-  const [nome, setNome] = React.useState('');
+  const nomeInputRef = React.useRef<TextInput>(null);
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [nome, setNome] = React.useState('');
   const [loading, setLoading] = React.useState(false);
+  const { signUp } = useAuth();
 
-  function onEmailSubmitEditing() {
+  function onNomeSubmitEditing() {
     passwordInputRef.current?.focus();
   }
 
-  async function handleSubmit() {
-    if (!nome.trim() || !email.trim() || !password) {
-      Alert.alert('Erro', 'Preencha nome, email e senha.');
+  function onEmailSubmitEditing() {
+    nomeInputRef.current?.focus();
+  }
+
+  async function onSubmit() {
+    if (!email || !password) {
+      Alert.alert('Erro', 'Preencha email e senha');
       return;
     }
 
     setLoading(true);
     try {
-      const res = await register({ nome: nome.trim(), email: email.trim(), password });
-      if (res.status === 201) {
-        // salvar token e user
-        try {
-          if (res.data?.token) {
-            await AsyncStorage.setItem('@estante:token', res.data.token);
-          }
-          if (res.data?.userWithoutPassword) {
-            await AsyncStorage.setItem('@estante:user', JSON.stringify(res.data.userWithoutPassword));
-          }
-        } catch (e) {
-          console.warn('Não foi possível salvar dados no storage', e);
-        }
-
-        router.replace('/');
-        return;
-      }
-
-      Alert.alert('Erro', res.data?.error || res.data?.message || 'Não foi possível registrar.');
+      await signUp(email, password, nome);
+      Alert.alert('Sucesso', 'Conta criada com sucesso!');
+      router.replace('/(tabs)/home');
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível conectar ao servidor.');
+      Alert.alert('Erro', error instanceof Error ? error.message : 'Erro ao criar conta');
     } finally {
       setLoading(false);
     }
@@ -80,14 +69,18 @@ export function SignUpForm() {
                 onChangeText={setEmail}
                 returnKeyType="next"
                 submitBehavior="submit"
+                value={email}
+                onChangeText={setEmail}
               />
             </View>
             <View className="gap-1.5">
-              <Label htmlFor="nome">Nome</Label>
+              <Label htmlFor="nome">Nome (opcional)</Label>
               <Input
+                ref={nomeInputRef}
                 id="nome"
                 placeholder="Seu nome"
                 autoCapitalize="words"
+                onSubmitEditing={onNomeSubmitEditing}
                 returnKeyType="next"
                 value={nome}
                 onChangeText={setNome}
@@ -102,30 +95,24 @@ export function SignUpForm() {
                 id="password"
                 secureTextEntry
                 returnKeyType="send"
-                onSubmitEditing={handleSubmit}
+                onSubmitEditing={onSubmit}
                 value={password}
                 onChangeText={setPassword}
               />
             </View>
-            <Button className="w-full" onPress={handleSubmit} disabled={loading}>
-              <Text>{loading ? 'Cadastrando...' : 'Continuar'}</Text>
+            <Button className="w-full" onPress={onSubmit} disabled={loading}>
+              <Text>{loading ? 'Criando conta...' : 'Continuar'}</Text>
             </Button>
           </View>
           <View className="flex-row items-center justify-center">
             <Text className="text-center text-sm">Já possuí uma conta? </Text>
             <Pressable
               onPress={() => {
-                router.push('/sign-in');
+                router.push('/(auth)/sign-in');
               }}>
               <Text className="text-sm underline underline-offset-4">Efetuar login</Text>
             </Pressable>
           </View>
-          <View className="flex-row items-center">
-            <Separator className="flex-1" />
-            <Text className="px-4 text-sm text-muted-foreground">ou</Text>
-            <Separator className="flex-1" />
-          </View>
-          <SocialConnections />
         </CardContent>
       </Card>
     </View>
